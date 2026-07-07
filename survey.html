@@ -351,7 +351,8 @@ function renderQuestion(){
   if(q.type === 'single' || q.type === 'multiple'){
     var cards = qArea.querySelectorAll('.option-card');
     cards.forEach(function(card) {
-      card.addEventListener('click', function() {
+      card.addEventListener('click', function(e) {
+        e.preventDefault();
         var qi = parseInt(card.dataset.q);
         var oi = parseInt(card.dataset.i);
         if(q.type === 'single'){
