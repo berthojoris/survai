@@ -64,7 +64,8 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
 .chart-header .chart-total{font-size:12px;color:var(--muted)}
 .chart-header .chart-total strong{color:var(--heading);font-weight:600}
 
-.bar-chart{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:8px}
+.bar-chart{display:flex;align-items:stretch;gap:4px;height:140px;padding-top:8px}
+.bar-chart .bar-col{height:100%}
 .bar-chart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
 .bar-chart .bar{width:100%;max-width:28px;border-radius:4px 4px 0 0;background:var(--accent);transition:height .4s ease;position:relative;cursor:pointer}
 .bar-chart .bar:hover{opacity:.85}
@@ -106,6 +107,45 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
 .tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:4px solid transparent;border-top-color:#27272A}
 .bar-col:hover .tooltip{display:block}
+
+
+/* ── Daily Chart Enhanced ── */
+.chart-controls{display:flex;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:3px}
+[data-theme='light'] .chart-controls{background:rgba(0,0,0,.04)}
+.chart-controls button{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+.chart-controls button.active{background:var(--accent);color:#0a0a0b}
+.chart-controls button:hover:not(.active){color:var(--body)}
+
+.chart-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.summary-chip{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+[data-theme='light'] .summary-chip{background:rgba(0,0,0,.02)}
+.summary-chip .sc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:3px}
+.summary-chip .sc-value{font-size:16px;font-weight:700;color:var(--heading);margin-top:2px;line-height:1.1}
+.summary-chip .sc-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.summary-chip .sc-icon{width:11px;height:11px}
+.summary-chip.peak .sc-value{color:var(--accent)}
+.summary-chip.low .sc-value{color:#F87171}
+
+.bar-chart .bar{background:linear-gradient(180deg,var(--accent),rgba(0,229,153,.3))}
+.bar-chart .bar.peak{box-shadow:0 0 14px rgba(0,229,153,.6);background:linear-gradient(180deg,#5eead4,var(--accent))}
+
+.chart-view{display:none}
+.chart-view.active{display:block}
+.trend-chart{position:relative;width:100%;height:180px}
+.trend-svg{width:100%;height:100%;display:block;overflow:visible}
+.trend-line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(0,229,153,.5))}
+.trend-area{fill:url(#trendGrad)}
+.trend-dot{fill:#0a0a0b;stroke:var(--accent);stroke-width:2}
+.trend-dot.peak{fill:var(--accent);stroke:#5eead4;filter:drop-shadow(0 0 6px rgba(0,229,153,.9))}
+.trend-grid{stroke:var(--border);stroke-width:1;stroke-dasharray:2 4;opacity:.45}
+.trend-axis{font-size:9px;fill:var(--muted)}
+.crosshair{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:0;transition:opacity .15s}
+.crosshair.visible{opacity:.6}
+.crosshair-dot{fill:var(--accent);stroke:#0a0a0b;stroke-width:2;opacity:0;transition:opacity .15s}
+.crosshair-dot.visible{opacity:1}
+.trend-tooltip{position:absolute;transform:translateX(-50%);background:#27272A;color:var(--heading);font-size:11px;font-weight:600;padding:6px 10px;border-radius:6px;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .15s,top .1s,left .1s;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.trend-tooltip.visible{opacity:1}
+.trend-tooltip .tt-date{color:var(--muted);font-weight:500;font-size:10px;display:block}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);color:var(--heading);font-size:13px;font-weight:500;padding:14px 18px;border-radius:12px;opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;pointer-events:none;white-space:nowrap;z-index:100;display:flex;align-items:center;gap:10px;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
@@ -189,9 +229,37 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
   <div class="card">
     <div class="chart-header">
       <div class="chart-title">Response Volume</div>
-      <div class="chart-total">Avg <strong>42</strong>/day</div>
+      <div class="chart-controls">
+        <button id="btnBar" class="active" onclick="switchView('bar')">Bar</button>
+        <button id="btnTrend" onclick="switchView('trend')">Trend</button>
+      </div>
     </div>
-    <div class="bar-chart" id="barChart"></div>
+    <div class="chart-summary">
+      <div class="summary-chip peak">
+        <div class="sc-label"><svg class="sc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>Peak</div>
+        <div class="sc-value">68</div>
+        <div class="sc-sub">Jun 22</div>
+      </div>
+      <div class="summary-chip">
+        <div class="sc-label"><svg class="sc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/></svg>Average</div>
+        <div class="sc-value">42</div>
+        <div class="sc-sub">per day</div>
+      </div>
+      <div class="summary-chip low">
+        <div class="sc-label"><svg class="sc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>Lowest</div>
+        <div class="sc-value">27</div>
+        <div class="sc-sub">Jun 9</div>
+      </div>
+    </div>
+    <div class="chart-view active" id="viewBar">
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+    <div class="chart-view" id="viewTrend">
+      <div class="trend-chart" id="trendChart">
+        <svg class="trend-svg" id="trendSvg"></svg>
+        <div class="trend-tooltip" id="trendTip"></div>
+      </div>
+    </div>
     <div class="chart-legend">
       <span>Jun 8</span>
       <span>Peak: 68 on Jun 22</span>
@@ -368,18 +436,137 @@ var dailyData=[
   {d:'28',v:36},{d:'29',v:41},{d:'30',v:46},{d:'1',v:53},{d:'2',v:49},
   {d:'3',v:44},{d:'4',v:40},{d:'5',v:37},{d:'6',v:42},{d:'7',v:0}
 ];
+// Date labels for the 30-day window (Jun 8 -> Jul 7)
+var trendLabels=dailyData.map(function(item,i){
+  var dt=new Date(2025,5,8+i);
+  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+});
+// ── Enhanced Bar Chart ──
 var maxVal=Math.max.apply(null,dailyData.map(function(d){return d.v}));
+var peakIdx=0;
+dailyData.forEach(function(d,i){if(d.v>=maxVal)peakIdx=i;});
 var chart=document.getElementById('barChart');
-dailyData.forEach(function(item){
+dailyData.forEach(function(item,i){
   var col=document.createElement('div');
   col.className='bar-col';
   var hPct=item.v>0?Math.max((item.v/maxVal)*100,4):4;
   col.innerHTML='<div class="bar-val">'+(item.v>0?item.v:'–')+'</div>'+
-    '<div class="bar '+(item.v===0?'empty':'')+'" style="height:'+hPct+'%">'+
+    '<div class="bar '+(item.v===0?'empty':'')+(i===peakIdx?' peak':'')+'" style="height:'+hPct+'%">'+
     '<div class="tooltip">'+(item.v>0?item.v+' responses':'No data')+'</div></div>'+
     '<div class="bar-label">'+item.d+'</div>';
   chart.appendChild(col);
 });
+// ── View Switch ──
+var trendDrawn=false;
+function switchView(v){
+  if(v==='bar'){
+    document.getElementById('viewBar').classList.add('active');
+    document.getElementById('viewTrend').classList.remove('active');
+    document.getElementById('btnBar').classList.add('active');
+    document.getElementById('btnTrend').classList.remove('active');
+  }else{
+    document.getElementById('viewTrend').classList.add('active');
+    document.getElementById('viewBar').classList.remove('active');
+    document.getElementById('btnTrend').classList.add('active');
+    document.getElementById('btnBar').classList.remove('active');
+    if(!trendDrawn){drawTrend();trendDrawn=true;}else{redrawTrendLine();}
+  }
+}
+// ── SVG Trend Chart ──
+var tGeom=null;
+function buildTrend(){
+  var container=document.getElementById('trendChart');
+  var W=container.clientWidth||358,H=180,padT=14,padB=22,padX=6;
+  var data=[];
+  dailyData.forEach(function(d,i){if(d.v>0)data.push({v:d.v,label:trendLabels[i]});});
+  var max=Math.max.apply(null,data.map(function(d){return d.v}));
+  var pts=data.map(function(d,i){return [padX+(i/(data.length-1))*(W-2*padX), padT+(1-d.v/max)*(H-padT-padB)];});
+  tGeom={W:W,H:H,padT:padT,padB:padB,padX:padX,data:data,pts:pts,max:max};
+}
+function smoothPath(points){
+  if(points.length<2)return '';
+  var d='M'+points[0][0].toFixed(1)+' '+points[0][1].toFixed(1);
+  for(var i=0;i<points.length-1;i++){
+    var p0=points[i-1]||points[i],p1=points[i],p2=points[i+1],p3=points[i+2]||p2;
+    var cp1x=p1[0]+(p2[0]-p0[0])/6,cp1y=p1[1]+(p2[1]-p0[1])/6;
+    var cp2x=p2[0]-(p3[0]-p1[0])/6,cp2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=' C'+cp1x.toFixed(1)+' '+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+' '+cp2y.toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
+  }
+  return d;
+}
+function drawTrend(){
+  buildTrend();
+  var g=tGeom,svg=document.getElementById('trendSvg');
+  var linePath=smoothPath(g.pts);
+  var areaPath=linePath+' L'+g.pts[g.pts.length-1][0].toFixed(1)+' '+(g.H-g.padB)+' L'+g.pts[0][0].toFixed(1)+' '+(g.H-g.padB)+' Z';
+  var grid='';
+  [1,0.66,0.33].forEach(function(f){
+    var y=g.padT+(1-f)*(g.H-g.padT-g.padB);
+    grid+='<line class="trend-grid" x1="'+g.padX+'" y1="'+y.toFixed(1)+'" x2="'+(g.W-g.padX)+'" y2="'+y.toFixed(1)+'"/>';
+  });
+  var peakIdx=0;g.data.forEach(function(d,i){if(d.v>=g.max)peakIdx=i;});
+  var peakP=g.pts[peakIdx];
+  var peakDot='<circle class="trend-dot peak" cx="'+peakP[0].toFixed(1)+'" cy="'+peakP[1].toFixed(1)+'" r="4.5"/>';
+  svg.setAttribute('viewBox','0 0 '+g.W+' '+g.H);
+  svg.setAttribute('width',g.W);svg.setAttribute('height',g.H);
+  svg.innerHTML='<defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="#00E599" stop-opacity="0.32"/>'+
+    '<stop offset="100%" stop-color="#00E599" stop-opacity="0"/></linearGradient></defs>'+
+    grid+'<path class="trend-area" d="'+areaPath+'"/>'+
+    '<path class="trend-line" id="trendLine" d="'+linePath+'"/>'+
+    '<line class="crosshair" id="crosshair" x1="0" y1="'+g.padT+'" x2="0" y2="'+(g.H-g.padB)+'"/>'+
+    '<circle class="crosshair-dot" id="chDot" cx="0" cy="0" r="4"/>'+
+    peakDot;
+  redrawTrendLine();
+}
+function redrawTrendLine(){
+  var line=document.getElementById('trendLine');
+  if(!line)return;
+  var len=line.getTotalLength();
+  line.style.transition='none';
+  line.style.strokeDasharray=len;
+  line.style.strokeDashoffset=len;
+  void line.getBoundingClientRect();
+  line.style.transition='stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)';
+  line.style.strokeDashoffset='0';
+}
+// Crosshair interaction
+(function(){
+  var chartEl=document.getElementById('trendChart');
+  function move(clientX){
+    if(!tGeom)return;
+    var svg=document.getElementById('trendSvg');
+    var rect=svg.getBoundingClientRect();
+    var x=((clientX-rect.left)/rect.width)*tGeom.W;
+    var nearest=0,best=1e9;
+    for(var i=0;i<tGeom.pts.length;i++){
+      var dx=Math.abs(tGeom.pts[i][0]-x);
+      if(dx<best){best=dx;nearest=i;}
+    }
+    var px=tGeom.pts[nearest][0],py=tGeom.pts[nearest][1];
+    var scaleX=rect.width/tGeom.W,scaleY=rect.height/tGeom.H;
+    document.getElementById('crosshair').setAttribute('x1',px.toFixed(1));
+    document.getElementById('crosshair').setAttribute('x2',px.toFixed(1));
+    document.getElementById('crosshair').classList.add('visible');
+    var dot=document.getElementById('chDot');
+    dot.setAttribute('cx',px.toFixed(1));dot.setAttribute('cy',py.toFixed(1));
+    dot.classList.add('visible');
+    var tip=document.getElementById('trendTip');
+    tip.innerHTML='<span class="tt-date">'+tGeom.data[nearest].label+'</span>'+tGeom.data[nearest].v+' responses';
+    tip.style.left=(px*scaleX)+'px';
+    tip.style.top=(py*scaleY-44)+'px';
+    tip.classList.add('visible');
+  }
+  chartEl.addEventListener('mousemove',function(e){move(e.clientX);});
+  chartEl.addEventListener('mouseleave',function(){
+    document.getElementById('crosshair').classList.remove('visible');
+    document.getElementById('chDot').classList.remove('visible');
+    document.getElementById('trendTip').classList.remove('visible');
+  });
+  chartEl.addEventListener('touchmove',function(e){
+    if(e.touches[0])move(e.touches[0].clientX);
+  },{passive:true});
+})();
 document.querySelectorAll('.answer-bar').forEach(function(bar){
   var w=bar.dataset.width;
   bar.style.width='0%';
