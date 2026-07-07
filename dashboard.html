@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Survai — Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0b;
+  --card:#141416;
+  --border:#27272A;
+  --accent:#00E599;
+  --accent-dim:rgba(0,229,153,.12);
+  --heading:#FFFFFF;
+  --body:#A1A1AA;
+  --muted:#71717A;
+  --danger:#F87171;
+  --warning:#FBBF24;
+  --radius:12px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);
+  color:var(--body);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+  line-height:1.5;
+  min-height:100dvh;
+  max-width:430px;
+  margin:0 auto;
+  position:relative;
+  overflow-x:hidden;
+  padding-bottom:88px;
+}
+
+/* top bar */
+.topbar{
+  padding:16px 20px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--bg);
+}
+.topbar-left h1{font-size:20px;font-weight:700;color:var(--heading);letter-spacing:-.3px}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--card);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);font-weight:600;font-size:14px;
+}
+
+/* stats grid */
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:4px 20px 18px;
+}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  position:relative;
+  overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent);opacity:.5;border-radius:var(--radius) var(--radius) 0 0;
+}
+.stat-card:nth-child(2)::before,.stat-card:nth-child(3)::before{background:var(--warning)}
+.stat-card:nth-child(4)::before{background:var(--muted)}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.stat-value{font-size:26px;font-weight:700;color:var(--heading);margin-top:4px;line-height:1.1}
+.stat-sub{font-size:11px;color:var(--accent);margin-top:4px;font-weight:500}
+.stat-card:nth-child(2) .stat-sub,
+.stat-card:nth-child(3) .stat-sub{color:var(--warning)}
+.stat-card:nth-child(4) .stat-sub{color:var(--body)}
+
+/* section heading */
+.section-head{
+  padding:0 20px 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.section-head h2{font-size:15px;font-weight:600;color:var(--heading)}
+.section-head a{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500}
+
+/* survey list */
+.survey-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
+
+.survey-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  transition:background .15s;
+}
+.survey-card:active{background:#1a1a1e}
+
+.survey-info{flex:1;min-width:0}
+.survey-title{font-size:14px;font-weight:600;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.survey-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:8px;align-items:center}
+.survey-meta svg{flex-shrink:0}
+.survey-loc{display:flex;align-items:center;gap:3px}
+
+.survey-right{text-align:right;flex-shrink:0}
+.badge{
+  display:inline-block;
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  padding:3px 8px;
+  border-radius:6px;
+  line-height:1.2;
+}
+.badge-completed{background:var(--accent-dim);color:var(--accent)}
+.badge-in-progress{background:rgba(251,191,36,.12);color:var(--warning)}
+.badge-pending{background:rgba(113,113,122,.12);color:var(--muted)}
+.survey-progress{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* FAB */
+.fab{
+  position:fixed;
+  bottom:100px;
+  right:max(20px,calc((100vw - 430px)/2 + 20px));
+  width:52px;height:52px;
+  border-radius:50%;
+  background:var(--accent);
+  border:none;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,229,153,.3);
+  z-index:20;
+  transition:transform .15s,box-shadow .15s;
+}
+.fab:active{transform:scale(.92);box-shadow:0 2px 10px rgba(0,229,153,.2)}
+.fab svg{color:#0a0a0b}
+
+/* bottom nav */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;max-width:430px;
+  background:var(--card);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:10;
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+}
+.nav-item{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;padding:4px 0;
+  color:var(--muted);
+  transition:color .15s;
+}
+.nav-item.active{color:var(--accent)}
+.nav-item svg{width:22px;height:22px}
+.nav-item span{font-size:10px;font-weight:500;letter-spacing:.2px}
+</style>
+</head>
+<body>
+
+<!-- top bar -->
+<header class="topbar">
+  <div class="topbar-left">
+    <h1>Survai</h1>
+    <p>7 Jul 2026 — Jakarta</p>
+  </div>
+  <div class="avatar" aria-label="Profile">RA</div>
+</header>
+
+<!-- stats -->
+<section class="stats" aria-label="Summary statistics">
+  <div class="stat-card">
+    <div class="stat-label">Total Surveys</div>
+    <div class="stat-value">48</div>
+    <div class="stat-sub">This month</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value">31</div>
+    <div class="stat-sub">64.6%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">In Progress</div>
+    <div class="stat-value">12</div>
+    <div class="stat-sub">3 due today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Response Rate</div>
+    <div class="stat-value">82%</div>
+    <div class="stat-sub">↑ 4% vs last month</div>
+  </div>
+</section>
+
+<!-- section heading -->
+<div class="section-head">
+  <h2>Recent Assignments</h2>
+  <a href="#" onclick="return false">View all</a>
+</div>
+
+<!-- survey list -->
+<section class="survey-list" aria-label="Recent survey assignments">
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Keluarga Sehat Program — RT 05</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Cakung, JakTim
+        </span>
+        <span>·</span>
+        <span>5 Jul</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-completed">Completed</span>
+      <div class="survey-progress">42/42 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Sanitasi Lingkungan — RW 03</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Penjaringan, JakUt
+        </span>
+        <span>·</span>
+        <span>4 Jul</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-in-progress">In Progress</span>
+      <div class="survey-progress">28/60 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Stunting Prevention — Desa Babelan</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Bekasi, Jabar
+        </span>
+        <span>·</span>
+        <span>3 Jul</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-completed">Completed</span>
+      <div class="survey-progress">35/35 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Imunisasi Anak — Puskesmas Kramat</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Senen, JakPus
+        </span>
+        <span>·</span>
+        <span>2 Jul</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-in-progress">In Progress</span>
+      <div class="survey-progress">11/50 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Kualitas Air Minum — Kelapa Gading</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Kelapa Gading, JakUt
+        </span>
+        <span>·</span>
+        <span>1 Jul</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-pending">Pending</span>
+      <div class="survey-progress">0/30 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Survey Kesehatan Mental Remaja</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Tambora, JakBar
+        </span>
+        <span>·</span>
+        <span>30 Jun</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-completed">Completed</span>
+      <div class="survey-progress">50/50 resp</div>
+    </div>
+  </article>
+
+  <article class="survey-card">
+    <div class="survey-info">
+      <div class="survey-title">Perilaku Hidup Bersih — RT 08</div>
+      <div class="survey-meta">
+        <span class="survey-loc">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Ciracas, JakTim
+        </span>
+        <span>·</span>
+        <span>28 Jun</span>
+      </div>
+    </div>
+    <div class="survey-right">
+      <span class="badge badge-pending">Pending</span>
+      <div class="survey-progress">Starts 8 Jul</div>
+    </div>
+  </article>
+</section>
+
+<!-- FAB -->
+<button class="fab" aria-label="New Survey">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- bottom nav -->
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button class="nav-item active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>Surveys</span>
+  </button>
+  <button class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Report</span>
+  </button>
+  <button class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profile</span>
+  </button>
+</nav>
+
+<script>
+// bottom nav active state
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => {
+      i.classList.remove('active');
+      i.removeAttribute('aria-current');
+    });
+    item.classList.add('active');
+    item.setAttribute('aria-current', 'page');
+  });
+});
+</script>
+</body>
+</html>

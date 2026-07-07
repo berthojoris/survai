@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Survai — Survey</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0b;
+    --card:#141416;
+    --border:#27272A;
+    --accent:#00E599;
+    --accent-dim:rgba(0,229,153,.12);
+    --heading:#FFFFFF;
+    --body:#A1A1AA;
+    --muted:#71717A;
+    --danger:#EF4444;
+    --radius:14px;
+    --radius-sm:10px;
+  }
+  html{font-size:16px;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
+    background:var(--bg);
+    color:var(--body);
+    line-height:1.55;
+    min-height:100dvh;
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;max-width:430px;min-height:100dvh;
+    display:flex;flex-direction:column;
+    padding:0 0 env(safe-area-inset-bottom,0);
+  }
+
+  /* Header */
+  .header{padding:16px 20px 0;flex-shrink:0}
+  .header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .header-title{font-size:15px;font-weight:700;color:var(--heading);letter-spacing:-.01em}
+  .header-save{
+    font-size:13px;font-weight:500;color:var(--accent);
+    background:none;border:none;cursor:pointer;
+    display:flex;align-items:center;gap:5px;
+    opacity:.85;transition:opacity .2s;
+  }
+  .header-save:active{opacity:.5}
+  .header-save svg{width:15px;height:15px;flex-shrink:0}
+  .save-toast{
+    position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);
+    background:#1a1a1e;border:1px solid var(--border);
+    color:var(--heading);font-size:13px;font-weight:500;
+    padding:10px 20px;border-radius:100px;
+    opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;z-index:100;white-space:nowrap;
+  }
+  .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* Progress */
+  .progress-wrap{margin-bottom:6px}
+  .progress-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .progress-label{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+  .progress-count{font-size:13px;font-weight:600;color:var(--accent)}
+  .progress-bar{width:100%;height:4px;background:var(--border);border-radius:100px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:100px;background:var(--accent);transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+  /* Question */
+  .question-area{flex:1;padding:24px 20px 0;display:flex;flex-direction:column}
+  .q-type{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--accent);background:var(--accent-dim);
+    padding:5px 10px;border-radius:100px;
+    margin-bottom:16px;width:fit-content;
+  }
+  .q-type svg{width:13px;height:13px}
+  .q-text{font-size:20px;font-weight:700;color:var(--heading);line-height:1.35;letter-spacing:-.02em;margin-bottom:24px}
+  .q-required{display:block;font-size:12px;color:var(--muted);margin-top:6px;font-weight:400}
+
+  /* Options */
+  .options{display:flex;flex-direction:column;gap:10px;flex:1}
+  .option-card{
+    position:relative;
+    background:var(--card);border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;
+    cursor:pointer;transition:border-color .2s,background .2s;
+    display:flex;align-items:center;gap:14px;
+    -webkit-user-select:none;user-select:none;
+    min-height:56px;
+  }
+  .option-card:active{background:#1a1a1e}
+  .option-card.selected{border-color:var(--accent);background:var(--accent-dim)}
+  .option-indicator{
+    width:22px;height:22px;border-radius:50%;
+    border:2px solid var(--muted);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .2s,background .2s;
+  }
+  .option-indicator.checkbox{border-radius:6px}
+  .option-indicator::after{
+    content:'';display:block;border-radius:50%;
+    width:10px;height:10px;background:var(--accent);
+    transform:scale(0);transition:transform .2s cubic-bezier(.4,0,.2,1);
+  }
+  .option-indicator.checkbox::after{border-radius:2px;width:10px;height:10px}
+  .option-card.selected .option-indicator{border-color:var(--accent);background:rgba(0,229,153,.15)}
+  .option-card.selected .option-indicator::after{transform:scale(1)}
+  .option-label{font-size:15px;color:var(--heading);font-weight:500;line-height:1.35}
+
+  /* Text / Number input */
+  .text-input-wrap{flex:1}
+  .text-input-wrap input{
+    width:100%;background:var(--card);border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;
+    font-size:15px;color:var(--heading);font-weight:500;
+    outline:none;transition:border-color .2s;
+    font-family:inherit;line-height:1.4;
+  }
+  .text-input-wrap input::placeholder{color:var(--muted)}
+  .text-input-wrap input:focus{border-color:var(--accent)}
+
+  /* Validation */
+  .validation{font-size:12px;color:var(--danger);font-weight:500;margin-top:8px;min-height:0;opacity:0;transition:opacity .2s}
+  .validation.show{opacity:1}
+
+  /* Nav */
+  .nav{padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom,20px));flex-shrink:0}
+  .nav-row{display:flex;gap:12px}
+  .btn{
+    flex:1;border:none;border-radius:var(--radius);
+    padding:17px 24px;font-size:15px;font-weight:700;
+    cursor:pointer;transition:opacity .15s,transform .1s;
+    font-family:inherit;letter-spacing:-.01em;
+    min-height:54px;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn:active{opacity:.7;transform:scale(.985)}
+  .btn:disabled{opacity:.3;pointer-events:none}
+  .btn-secondary{background:var(--card);color:var(--body);border:1.5px solid var(--border)}
+  .btn-primary{background:var(--accent);color:#0a0a0b}
+  .btn svg{width:18px;height:18px}
+
+  /* Completion */
+  .completion{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px}
+  .completion-icon{width:80px;height:80px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+  .completion-icon svg{width:36px;height:36px;color:var(--accent)}
+  .completion h2{font-size:22px;font-weight:700;color:var(--heading);margin-bottom:8px}
+  .completion p{font-size:14px;color:var(--muted);max-width:260px;line-height:1.5}
+
+  /* Animations */
+  .fade-in{animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-row">
+      <div class="header-title" id="surveyTitle">Sensus Penduduk 2025</div>
+      <button class="header-save" id="saveBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Simpan
+      </button>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-meta">
+        <span class="progress-label">Pertanyaan</span>
+        <span class="progress-count" id="progressCount">1 / 12</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:8.33%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Area -->
+  <div class="question-area" id="questionArea"></div>
+
+  <!-- Navigation -->
+  <div class="nav" id="navWrap">
+    <div class="nav-row">
+      <button class="btn btn-secondary" id="prevBtn" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Kembali
+      </button>
+      <button class="btn btn-primary" id="nextBtn" type="button">
+        Selanjutnya
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="validation" id="validation"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="save-toast" id="saveToast">&#10003; Progres tersimpan</div>
+
+<script>
+const survey = {
+  title:"Sensus Penduduk 2025",
+  questions:[
+    {
+      id:1, type:"single", required:true,
+      text:"Berapa jumlah anggota keluarga yang tinggal di rumah ini?",
+      options:["1","2","3\u20134","5\u20136","7 atau lebih"]
+    },
+    {
+      id:2, type:"single", required:true,
+      text:"Apa status kepemilikan tempat tinggal ini?",
+      options:["Milik sendiri","Sewa / kontrak","Milik keluarga","Menumpang","Lainnya"]
+    },
+    {
+      id:3, type:"single", required:true,
+      text:"Apa jenis bangunan tempat tinggal ini?",
+      options:["Rumah permanen","Rumah semi-permanen","Rumah non-permanen","Apartemen / rusun","Barak / asrama"]
+    },
+    {
+      id:4, type:"multiple", required:true,
+      text:"Sumber air minum yang digunakan keluarga (boleh lebih dari satu):",
+      options:["PDAM / ledeng","Sumur bor","Sumur gali","Air isi ulang","Sungai / danau","Hujan"]
+    },
+    {
+      id:5, type:"single", required:true,
+      text:"Bagaimana cara keluarga mengelola limbah rumah tangga?",
+      options:["Septic tank","SPAL","Kolam / biopori","Langsung ke sungai","Lubang tanah"]
+    },
+    {
+      id:6, type:"single", required:true,
+      text:"Berapa jarak tempat tinggal ke fasilitas kesehatan terdekat?",
+      options:["< 1 km","1\u20133 km","3\u20135 km","5\u201310 km","> 10 km"]
+    },
+    {
+      id:7, type:"multiple", required:false,
+      text:"Media informasi yang sering diakses anggota keluarga (boleh lebih dari satu):",
+      options:["Televisi","Radio","Internet / media sosial","Koran / majalah","Tetangga / pengumuman"]
+    },
+    {
+      id:8, type:"number", required:true,
+      text:"Berapa penghasilan bulanan rata-rata keluarga (dalam juta rupiah)?",
+      placeholder:"Contoh: 4.5"
+    },
+    {
+      id:9, type:"single", required:true,
+      text:"Tingkat pendidikan tertinggi anggota keluarga:",
+      options:["Tidak sekolah","SD / sederajat","SMP / sederajat","SMA / sederajat","Diploma","Sarjana atau lebih"]
+    },
+    {
+      id:10, type:"single", required:true,
+      text:"Apa mata pencaharian utama kepala keluarga?",
+      options:["Petani / nelayan","Buruh / pekerja","Pedagang","Pegawai negeri / BUMN","Wiraswasta","Pensiunan","Lainnya"]
+    },
+    {
+      id:11, type:"text", required:true,
+      text:"Tuliskan alamat lengkap tempat tinggal:",
+      placeholder:"Nama jalan, RT/RW, kelurahan, kecamatan"
+    },
+    {
+      id:12, type:"multiple", required:true,
+      text:"Apakah ada anggota keluarga yang termasuk dalam kelompok rentan? (boleh lebih dari satu)",
+      options:["Lansia (60+ tahun)","Ibu hamil","Anak di bawah 5 tahun","Penyandang disabilitas","Tidak ada"]
+    }
+  ]
+};
+
+const typeLabels = {
+  single:"Pilihan Satu",
+  multiple:"Pilihan Ganda",
+  text:"Teks",
+  number:"Angka"
+};
+
+const typeIcons = {
+  single:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
+  multiple:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="9 12 12 15 16 10"/></svg>',
+  text:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+  number:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>'
+};
+
+let current = 0;
+const answers = {};
+const total = survey.questions.length;
+const qArea = document.getElementById('questionArea');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const validationEl = document.getElementById('validation');
+const progressCount = document.getElementById('progressCount');
+const progressFill = document.getElementById('progressFill');
+const navWrap = document.getElementById('navWrap');
+const progressWrap = document.getElementById('progressWrap');
+
+function showValidation(msg){
+  validationEl.textContent = msg;
+  validationEl.classList.add('show');
+}
+function hideValidation(){
+  validationEl.classList.remove('show');
+}
+
+function updateProgress(){
+  progressCount.textContent = (current+1)+' / '+total;
+  progressFill.style.width = (((current+1)/total)*100)+'%';
+}
+
+function renderQuestion(){
+  hideValidation();
+  updateProgress();
+  prevBtn.disabled = current === 0;
+
+  const q = survey.questions[current];
+  const isLast = current === total - 1;
+  nextBtn.innerHTML = isLast
+    ? 'Kirim Survey <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : 'Selanjutnya <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+  let html = '<div class="fade-in">';
+  html += '<div class="q-type">'+typeIcons[q.type]+' '+typeLabels[q.type]+'</div>';
+  html += '<div class="q-text">'+q.text;
+  if(q.required) html += '<span class="q-required">Wajib diisi</span>';
+  html += '</div>';
+
+  if(q.type === 'single' || q.type === 'multiple'){
+    const indicatorClass = q.type === 'multiple' ? 'checkbox' : '';
+    html += '<div class="options">';
+    q.options.forEach(function(opt, i) {
+      const selected = Array.isArray(answers[q.id]) && answers[q.id].indexOf(i) > -1 ? 'selected' : '';
+      html += '<label class="option-card '+selected+'" data-q="'+q.id+'" data-i="'+i+'">';
+      html += '<input type="'+(q.type==='multiple'?'checkbox':'radio')+'" name="q'+q.id+'" value="'+i+'" style="display:none">';
+      html += '<div class="option-indicator '+indicatorClass+'"></div>';
+      html += '<span class="option-label">'+opt+'</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+  } else {
+    const val = answers[q.id] || '';
+    const inputType = q.type === 'number' ? 'tel' : 'text';
+    const placeholder = q.placeholder || 'Ketik jawaban\u2026';
+    html += '<div class="text-input-wrap">';
+    html += '<input type="'+inputType+'" inputmode="'+(q.type==='number'?'decimal':'text')+'"';
+    html += ' autocomplete="off" autocorrect="'+(q.type==='number'?'off':'on')+'"';
+    html += ' placeholder="'+placeholder+'" id="textInput" value="'+val+'">';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  qArea.innerHTML = html;
+
+  if(q.type === 'single' || q.type === 'multiple'){
+    var cards = qArea.querySelectorAll('.option-card');
+    cards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        var qi = parseInt(card.dataset.q);
+        var oi = parseInt(card.dataset.i);
+        if(q.type === 'single'){
+          answers[qi] = [oi];
+          cards.forEach(function(c){ c.classList.remove('selected'); c.querySelector('input').checked = false; });
+          card.classList.add('selected');
+          card.querySelector('input').checked = true;
+        } else {
+          if(!Array.isArray(answers[qi])) answers[qi] = [];
+          var idx = answers[qi].indexOf(oi);
+          if(idx > -1){
+            answers[qi].splice(idx,1);
+            card.classList.remove('selected');
+            card.querySelector('input').checked = false;
+          } else {
+            answers[qi].push(oi);
+            card.classList.add('selected');
+            card.querySelector('input').checked = true;
+          }
+        }
+        hideValidation();
+      });
+    });
+  } else {
+    var input = document.getElementById('textInput');
+    if(input){
+      input.addEventListener('input', function() {
+        answers[q.id] = input.value.trim();
+        hideValidation();
+      });
+      input.addEventListener('keydown', function(e) {
+        if(e.key === 'Enter'){ e.preventDefault(); goNext(); }
+      });
+      setTimeout(function(){ input.focus(); }, 100);
+    }
+  }
+}
+
+function validate(){
+  var q = survey.questions[current];
+  if(!q.required) return true;
+  var a = answers[q.id];
+  if(q.type === 'single' || q.type === 'multiple'){
+    if(!Array.isArray(a) || a.length === 0){
+      showValidation(q.type==='multiple' ? 'Pilih minimal satu jawaban' : 'Pilih satu jawaban');
+      return false;
+    }
+  } else {
+    if(!a || a === ''){
+      showValidation('Jawaban wajib diisi');
+      return false;
+    }
+  }
+  return true;
+}
+
+function goNext(){
+  if(!validate()) return;
+  if(current < total - 1){
+    current++;
+    renderQuestion();
+  } else {
+    submitSurvey();
+  }
+}
+
+function goPrev(){
+  if(current > 0){
+    current--;
+    renderQuestion();
+  }
+}
+
+function submitSurvey(){
+  for(var k=0; k<survey.questions.length; k++){
+    var q = survey.questions[k];
+    if(q.required){
+      var a = answers[q.id];
+      if(q.type==='single'||q.type==='multiple'){
+        if(!Array.isArray(a)||a.length===0){
+          current=k; renderQuestion();
+          showValidation(q.type==='multiple'?'Pilih minimal satu jawaban':'Pilih satu jawaban');
+          return;
+        }
+      } else {
+        if(!a||a===''){
+          current=k; renderQuestion();
+          showValidation('Jawaban wajib diisi');
+          return;
+        }
+      }
+    }
+  }
+  progressWrap.style.display = 'none';
+  navWrap.style.display = 'none';
+  qArea.innerHTML = '<div class="completion fade-in">'+
+    '<div class="completion-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'+
+    '<h2>Survey Selesai</h2>'+
+    '<p>Terima kasih! Data telah dikirim. Anda dapat melanjutkan ke responden berikutnya.</p>'+
+    '</div>';
+}
+
+function saveProgress(){
+  var btn = document.getElementById('saveBtn');
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '.5';
+  try {
+    var data = JSON.stringify({surveyId:survey.title, current:current, answers:answers, timestamp:Date.now()});
+    localStorage.setItem('survai_progress', data);
+  } catch(e){}
+  var toast = document.getElementById('saveToast');
+  toast.classList.add('show');
+  setTimeout(function(){
+    toast.classList.remove('show');
+    btn.style.pointerEvents = '';
+    btn.style.opacity = '';
+  }, 2000);
+}
+
+function loadProgress(){
+  try {
+    var raw = localStorage.getItem('survai_progress');
+    if(raw){
+      var data = JSON.parse(raw);
+      if(data.surveyId === survey.title && data.answers){
+        for(var key in data.answers){ answers[key] = data.answers[key]; }
+        if(typeof data.current === 'number' && data.current < total){
+          current = data.current;
+        }
+      }
+    }
+  } catch(e){}
+}
+
+loadProgress();
+document.getElementById('surveyTitle').textContent = survey.title;
+renderQuestion();
+prevBtn.addEventListener('click', goPrev);
+nextBtn.addEventListener('click', goNext);
+document.getElementById('saveBtn').addEventListener('click', saveProgress);
+</script>
+</body>
+</html>

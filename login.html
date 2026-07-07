@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>Survai — Log In</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0a0b;
+    --card:      #141416;
+    --border:    #27272A;
+    --accent:    #00E599;
+    --accent-dim:#00E59926;
+    --heading:   #FFFFFF;
+    --body:      #A1A1AA;
+    --muted:     #71717A;
+    --danger:    #EF4444;
+    --radius:    10px;
+    --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  html { height: 100%; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--body);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px env(safe-area-inset-bottom, 0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 430px;
+  }
+
+  /* ── Wordmark ── */
+  .wordmark {
+    text-align: center;
+    margin-bottom: 40px;
+    user-select: none;
+  }
+
+  .wordmark svg {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 12px;
+  }
+
+  .wordmark h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: -0.3px;
+  }
+
+  .wordmark p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+  }
+
+  /* ── Form ── */
+  .field { margin-bottom: 20px; }
+  .field:last-of-type { margin-bottom: 24px; }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--body);
+    margin-bottom: 8px;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-wrap svg.icon {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    color: var(--muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px 0 42px;
+    font-family: var(--font);
+    font-size: 15px;
+    color: var(--heading);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .input-wrap input::placeholder {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .input-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .input-wrap input:focus ~ svg.icon {
+    color: var(--accent);
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.15s ease;
+  }
+
+  .toggle-password:hover { color: var(--body); }
+  .toggle-password svg { width: 18px; height: 18px; display: block; }
+
+  /* ── Button ── */
+  .btn-login {
+    width: 100%;
+    height: 48px;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    color: #0a0a0b;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-login:hover { box-shadow: 0 4px 20px #00E59940; }
+
+  .btn-login:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  .btn-login:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-login::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.4s ease;
+    pointer-events: none;
+  }
+
+  .btn-login:hover::after { left: 100%; }
+
+  .btn-login .spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(10,10,11,0.25);
+    border-top-color: #0a0a0b;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin: 0 auto;
+    vertical-align: middle;
+  }
+
+  .btn-login.loading .btn-text { display: none; }
+  .btn-login.loading .spinner  { display: inline-block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Links row ── */
+  .links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    font-size: 13px;
+  }
+
+  .links a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .links a:hover { color: var(--body); }
+  .links a:active { color: var(--accent); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--body);
+    font-size: 13px;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+  }
+
+  .toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* ── Field error ── */
+  .field-error {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 6px;
+    display: none;
+  }
+
+  .field.has-error input {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px #EF444420;
+  }
+
+  .field.has-error .field-error { display: block; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Wordmark -->
+  <div class="wordmark">
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="32" height="32" rx="8" fill="#00E599"/>
+      <path d="M10 24V12l4 7 4-7v12" stroke="#0a0a0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="26" cy="18" r="4" stroke="#0a0a0b" stroke-width="2.5"/>
+    </svg>
+    <h1>Survai</h1>
+    <p>Field survey platform</p>
+  </div>
+
+  <!-- Login Card -->
+  <div class="card">
+    <form id="loginForm" novalidate autocomplete="on">
+
+      <div class="field" id="emailField">
+        <label for="email">Email address</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="3"/>
+            <path d="M22 7l-10 6L2 7"/>
+          </svg>
+          <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" required>
+        </div>
+        <div class="field-error" id="emailError">Enter a valid email address</div>
+      </div>
+
+      <div class="field" id="passwordField">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="3"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="toggle-password" id="togglePw" aria-label="Toggle password visibility">
+            <svg id="eyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg id="eyeClosed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <div class="field-error" id="passwordError">Password is required</div>
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        <span class="btn-text">Log In</span>
+        <span class="spinner"></span>
+      </button>
+
+      <div class="links">
+        <a href="#" id="forgotLink">Forgot password?</a>
+        <a href="#" id="createLink">Create account</a>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="footer">
+    Survai v1.0 &middot; field data collection
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var form       = document.getElementById('loginForm');
+  var email      = document.getElementById('email');
+  var password   = document.getElementById('password');
+  var btnLogin   = document.getElementById('btnLogin');
+  var togglePw   = document.getElementById('togglePw');
+  var eyeOpen    = document.getElementById('eyeOpen');
+  var eyeClosed  = document.getElementById('eyeClosed');
+  var emailField    = document.getElementById('emailField');
+  var passwordField = document.getElementById('passwordField');
+  var toastEl    = document.getElementById('toast');
+
+  // Password visibility toggle
+  var pwVisible = false;
+  togglePw.addEventListener('click', function () {
+    pwVisible = !pwVisible;
+    password.type = pwVisible ? 'text' : 'password';
+    eyeOpen.style.display   = pwVisible ? 'none'  : 'block';
+    eyeClosed.style.display = pwVisible ? 'block' : 'none';
+  });
+
+  // Clear field error on input
+  email.addEventListener('input', function () { emailField.classList.remove('has-error'); });
+  password.addEventListener('input', function () { passwordField.classList.remove('has-error'); });
+
+  // Toast helper
+  var toastTimer;
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    toastTimer = setTimeout(function () { toastEl.classList.remove('visible'); }, 3000);
+  }
+
+  // Form submit
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var valid = true;
+
+    if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+      emailField.classList.add('has-error');
+      valid = false;
+    }
+    if (!password.value) {
+      passwordField.classList.add('has-error');
+      valid = false;
+    }
+    if (!valid) return;
+
+    btnLogin.classList.add('loading');
+    btnLogin.disabled = true;
+
+    setTimeout(function () {
+      btnLogin.classList.remove('loading');
+      btnLogin.disabled = false;
+      showToast('Authentication not configured — connect your backend');
+    }, 1800);
+  });
+
+  // Stub links
+  document.getElementById('forgotLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    showToast('Password reset flow — coming soon');
+  });
+  document.getElementById('createLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    showToast('Account creation — coming soon');
+  });
+})();
+</script>
+
+</body>
+</html>

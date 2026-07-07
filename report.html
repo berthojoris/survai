@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Report — Survai</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0b;--card:#141416;--border:#27272A;
+  --accent:#00E599;--heading:#FFFFFF;--body:#A1A1AA;--muted:#71717A;
+  --radius:12px;--nav-h:64px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+html{background:var(--bg);color:var(--body);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px)}
+
+.page-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between}
+.page-header h1{color:var(--heading);font-size:18px;font-weight:600;letter-spacing:-.2px}
+.page-header .subtitle{font-size:12px;color:var(--muted);margin-top:1px}
+
+.filter-bar{padding:12px 16px;display:flex;gap:8px}
+.filter-bar select,.filter-bar button{
+  background:var(--card);border:1px solid var(--border);color:var(--body);
+  border-radius:8px;padding:8px 12px;font-size:13px;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.filter-bar select{flex:1;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;
+}
+.filter-bar select:focus{border-color:var(--accent)}
+.filter-bar .btn-export{
+  background:var(--accent);color:#0a0a0b;border:none;font-weight:600;
+  white-space:nowrap;display:flex;align-items:center;gap:6px;cursor:pointer;
+}
+.filter-bar .btn-export:active{opacity:.85}
+.filter-bar .btn-export svg{width:16px;height:16px}
+
+.section{padding:0 16px;margin-bottom:20px}
+.section-title{color:var(--heading);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.section-title .badge{background:var(--accent);color:#0a0a0b;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px}
+.metric .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric .value{font-size:22px;font-weight:700;color:var(--heading);letter-spacing:-.5px;line-height:1.1}
+.metric .value span{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0}
+.metric .change{font-size:11px;margin-top:4px;display:flex;align-items:center;gap:3px}
+.metric .change.up{color:var(--accent)}
+.metric .change.down{color:#F87171}
+.metric .change svg{width:12px;height:12px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.chart-header .chart-title{color:var(--heading);font-size:14px;font-weight:600}
+.chart-header .chart-total{font-size:12px;color:var(--muted)}
+.chart-header .chart-total strong{color:var(--heading);font-weight:600}
+
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:8px}
+.bar-chart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.bar-chart .bar{width:100%;max-width:28px;border-radius:4px 4px 0 0;background:var(--accent);transition:height .4s ease;position:relative;cursor:pointer}
+.bar-chart .bar:hover{opacity:.85}
+.bar-chart .bar.empty{background:#27272A}
+.bar-chart .bar-label{font-size:10px;color:var(--muted);white-space:nowrap}
+.bar-chart .bar-val{font-size:9px;color:var(--body);font-weight:600;opacity:0;transition:opacity .2s}
+.bar-col:hover .bar-val{opacity:1}
+.chart-legend{display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px}
+
+.breakdown-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px}
+.breakdown-header{padding:14px 16px 10px}
+.breakdown-header .q-title{color:var(--heading);font-size:14px;font-weight:600}
+.breakdown-header .q-count{font-size:12px;color:var(--muted);margin-top:2px}
+.answer-row{display:flex;align-items:center;padding:10px 16px;border-top:1px solid var(--border);gap:10px}
+.answer-row:first-of-type{border-top:none}
+.answer-label{width:72px;flex-shrink:0;font-size:12px;color:var(--body);font-weight:500}
+.answer-bar-wrap{flex:1;height:8px;background:#1a1a1d;border-radius:4px;overflow:hidden}
+.answer-bar{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.25,.46,.45,.94)}
+.answer-bar.c1{background:var(--accent)}
+.answer-bar.c2{background:#3B82F6}
+.answer-bar.c3{background:#A78BFA}
+.answer-bar.c4{background:#FBBF24}
+.answer-bar.c5{background:#F87171}
+.answer-pct{width:36px;text-align:right;font-size:13px;font-weight:600;color:var(--heading)}
+.answer-count{width:32px;text-align:right;font-size:11px;color:var(--muted)}
+
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;
+  background:var(--card);border-top:1px solid var(--border);display:flex;height:var(--nav-h);
+  padding-bottom:var(--safe-b);z-index:20}
+.bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-decoration:none;color:var(--muted);font-size:10px;font-weight:500;position:relative}
+.bottom-nav a svg{width:22px;height:22px;stroke-width:1.8}
+.bottom-nav a.active{color:var(--accent)}
+.bottom-nav a.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
+
+.tooltip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#27272A;color:var(--heading);font-size:11px;padding:4px 8px;border-radius:6px;
+  white-space:nowrap;pointer-events:none;z-index:5;font-weight:500}
+.tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:4px solid transparent;border-top-color:#27272A}
+.bar-col:hover .tooltip{display:block}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>Report</h1>
+    <div class="subtitle">Kabupaten Bandung &middot; Survey ID #0084</div>
+  </div>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+</div>
+
+<div class="filter-bar">
+  <select id="presetSelect" onchange="applyPreset()">
+    <option value="7">Last 7 days</option>
+    <option value="14">Last 14 days</option>
+    <option value="30" selected>Last 30 days</option>
+    <option value="90">Last 90 days</option>
+    <option value="custom">Custom range</option>
+  </select>
+  <button class="btn-export" onclick="exportReport()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export
+  </button>
+</div>
+
+<div class="section">
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">Total Responses</div>
+      <div class="value">1,247</div>
+      <div class="change up">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+        +12.4%
+      </div>
+    </div>
+    <div class="metric">
+      <div class="label">Avg. Time</div>
+      <div class="value">4:32<span>m</span></div>
+      <div class="change down">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        &minus;0:18
+      </div>
+    </div>
+    <div class="metric">
+      <div class="label">Completion</div>
+      <div class="value">89<span>%</span></div>
+      <div class="change up">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+        +3.1%
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">
+    Daily Responses
+    <span class="badge">30d</span>
+  </div>
+  <div class="card">
+    <div class="chart-header">
+      <div class="chart-title">Response Volume</div>
+      <div class="chart-total">Avg <strong>42</strong>/day</div>
+    </div>
+    <div class="bar-chart" id="barChart"></div>
+    <div class="chart-legend">
+      <span>Jun 8</span>
+      <span>Peak: 68 on Jun 22</span>
+      <span>Jul 7</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Answer Breakdown</div>
+
+  <div class="breakdown-card">
+    <div class="breakdown-header">
+      <div class="q-title">Q1. Apakah Anda puas dengan layanan publik di wilayah Anda?</div>
+      <div class="q-count">1,210 of 1,247 responded</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Sangat Puas</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c1" data-width="38"></div></div>
+      <div class="answer-pct">38%</div>
+      <div class="answer-count">460</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Puas</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c2" data-width="29"></div></div>
+      <div class="answer-pct">29%</div>
+      <div class="answer-count">351</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Cukup</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c3" data-width="19"></div></div>
+      <div class="answer-pct">19%</div>
+      <div class="answer-count">230</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Kurang</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c4" data-width="10"></div></div>
+      <div class="answer-pct">10%</div>
+      <div class="answer-count">121</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Tidak Puas</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c5" data-width="4"></div></div>
+      <div class="answer-pct">4%</div>
+      <div class="answer-count">48</div>
+    </div>
+  </div>
+
+  <div class="breakdown-card">
+    <div class="breakdown-header">
+      <div class="q-title">Q3. Apa masalah terbesar di lingkungan Anda?</div>
+      <div class="q-count">1,189 of 1,247 responded</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Infrastruktur</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c1" data-width="34"></div></div>
+      <div class="answer-pct">34%</div>
+      <div class="answer-count">404</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Kebersihan</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c2" data-width="26"></div></div>
+      <div class="answer-pct">26%</div>
+      <div class="answer-count">309</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Keamanan</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c3" data-width="18"></div></div>
+      <div class="answer-pct">18%</div>
+      <div class="answer-count">214</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Transportasi</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c4" data-width="14"></div></div>
+      <div class="answer-pct">14%</div>
+      <div class="answer-count">166</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Lainnya</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c5" data-width="8"></div></div>
+      <div class="answer-pct">8%</div>
+      <div class="answer-count">96</div>
+    </div>
+  </div>
+
+  <div class="breakdown-card">
+    <div class="breakdown-header">
+      <div class="q-title">Q5. Seberapa sering Anda mengunjungi puskesmas?</div>
+      <div class="q-count">1,155 of 1,247 responded</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Setiap bulan</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c1" data-width="22"></div></div>
+      <div class="answer-pct">22%</div>
+      <div class="answer-count">254</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">2&ndash;3x / tahun</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c2" data-width="31"></div></div>
+      <div class="answer-pct">31%</div>
+      <div class="answer-count">358</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">1x / tahun</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c3" data-width="25"></div></div>
+      <div class="answer-pct">25%</div>
+      <div class="answer-count">289</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Jarang</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c4" data-width="15"></div></div>
+      <div class="answer-pct">15%</div>
+      <div class="answer-count">173</div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-label">Tidak pernah</div>
+      <div class="answer-bar-wrap"><div class="answer-bar c5" data-width="7"></div></div>
+      <div class="answer-pct">7%</div>
+      <div class="answer-count">81</div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </a>
+  <a href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Surveys
+  </a>
+  <a href="#" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Report
+  </a>
+  <a href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+<script>
+var dailyData=[
+  {d:'8',v:31},{d:'9',v:27},{d:'10',v:35},{d:'11',v:42},{d:'12',v:38},
+  {d:'13',v:29},{d:'14',v:44},{d:'15',v:51},{d:'16',v:48},{d:'17',v:37},
+  {d:'18',v:33},{d:'19',v:45},{d:'20',v:52},{d:'21',v:58},{d:'22',v:68},
+  {d:'23',v:55},{d:'24',v:47},{d:'25',v:50},{d:'26',v:43},{d:'27',v:39},
+  {d:'28',v:36},{d:'29',v:41},{d:'30',v:46},{d:'1',v:53},{d:'2',v:49},
+  {d:'3',v:44},{d:'4',v:40},{d:'5',v:37},{d:'6',v:42},{d:'7',v:0}
+];
+var maxVal=Math.max.apply(null,dailyData.map(function(d){return d.v}));
+var chart=document.getElementById('barChart');
+dailyData.forEach(function(item){
+  var col=document.createElement('div');
+  col.className='bar-col';
+  var hPct=item.v>0?Math.max((item.v/maxVal)*100,4):4;
+  col.innerHTML='<div class="bar-val">'+(item.v>0?item.v:'–')+'</div>'+
+    '<div class="bar '+(item.v===0?'empty':'')+'" style="height:'+hPct+'%">'+
+    '<div class="tooltip">'+(item.v>0?item.v+' responses':'No data')+'</div></div>'+
+    '<div class="bar-label">'+item.d+'</div>';
+  chart.appendChild(col);
+});
+document.querySelectorAll('.answer-bar').forEach(function(bar){
+  var w=bar.dataset.width;
+  bar.style.width='0%';
+  setTimeout(function(){bar.style.width=w+'%';},120);
+});
+function applyPreset(){}
+function exportReport(){
+  var btn=document.querySelector('.btn-export');
+  var orig=btn.innerHTML;
+  btn.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Saved';
+  setTimeout(function(){btn.innerHTML=orig;},2000);
+}
+</script>
+</body>
+</html>
