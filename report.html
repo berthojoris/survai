@@ -11,6 +11,14 @@
   --accent:#00E599;--heading:#FFFFFF;--body:#A1A1AA;--muted:#71717A;
   --radius:12px;--nav-h:64px;--safe-b:env(safe-area-inset-bottom,0px);
 }
+[data-theme='light']{
+  --bg:#FAFAFA;--card:#FFFFFF;--border:#E4E4E7;
+  --accent:#00C07B;--accent-dim:#00C07B1A;--heading:#18181B;--body:#63636E;--muted:#A1A1AA;
+}
+[data-theme='light'] .card,
+[data-theme='light'] .breakdown-card,
+[data-theme='light'] .page-header,
+[data-theme='light'] .bottom-nav{background:var(--card)}
 html{background:var(--bg);color:var(--body);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px)}
 
@@ -121,7 +129,13 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
     <h1>Report</h1>
     <div class="subtitle">Kabupaten Bandung &middot; Survey ID #0084</div>
   </div>
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="themeToggle" onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center" aria-label="Toggle theme">
+      <svg id="iconMoon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      <svg id="iconSun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+  </div>
 </div>
 
 <div class="filter-bar">
@@ -324,6 +338,28 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
 <div class="toast" id="toast"></div>
 
 <script>
+(function(){
+  var saved=localStorage.getItem('survai_theme');
+  if(saved==='light'){
+    document.documentElement.setAttribute('data-theme','light');
+    document.getElementById('iconMoon').style.display='none';
+    document.getElementById('iconSun').style.display='block';
+  }
+})();
+function toggleTheme(){
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('survai_theme','dark');
+    document.getElementById('iconMoon').style.display='block';
+    document.getElementById('iconSun').style.display='none';
+  }else{
+    document.documentElement.setAttribute('data-theme','light');
+    localStorage.setItem('survai_theme','light');
+    document.getElementById('iconMoon').style.display='none';
+    document.getElementById('iconSun').style.display='block';
+  }
+}
 var dailyData=[
   {d:'8',v:31},{d:'9',v:27},{d:'10',v:35},{d:'11',v:42},{d:'12',v:38},
   {d:'13',v:29},{d:'14',v:44},{d:'15',v:51},{d:'16',v:48},{d:'17',v:37},

@@ -19,6 +19,27 @@
     --radius:14px;
     --radius-sm:10px;
   }
+  [data-theme='light']{
+    --bg:#FAFAFA;
+    --card:#FFFFFF;
+    --border:#E4E4E7;
+    --accent:#00C07B;
+    --accent-dim:rgba(0,192,123,.10);
+    --heading:#18181B;
+    --body:#63636E;
+    --muted:#A1A1AA;
+    --danger:#DC2626;
+  }
+  [data-theme='light'] .option-card:active{background:#F0F0F2}
+  [data-theme='light'] .btn-secondary{background:#FFFFFF;color:var(--body);border:1.5px solid var(--border)}
+  [data-theme='light'] .text-input-wrap input{background:#FFFFFF;color:var(--heading)}
+  [data-theme='light'] .validation{color:var(--danger)}
+  [data-theme='light'] .completion{background:var(--bg)}
+  [data-theme='light'] .toast{box-shadow:0 8px 32px rgba(0,0,0,.12)}
+  [data-theme='light'] .toast.success{box-shadow:0 8px 32px rgba(0,0,0,.12),0 0 12px rgba(0,192,123,.25),inset 0 0 12px rgba(0,192,123,.06)}
+  [data-theme='light'] .toast.info{box-shadow:0 8px 32px rgba(0,0,0,.12),0 0 12px rgba(56,189,248,.25),inset 0 0 12px rgba(56,189,248,.06)}
+  [data-theme='light'] .toast.warning{box-shadow:0 8px 32px rgba(0,0,0,.12),0 0 12px rgba(251,191,36,.25),inset 0 0 12px rgba(251,191,36,.06)}
+  [data-theme='light'] .toast.danger{box-shadow:0 8px 32px rgba(0,0,0,.12),0 0 12px rgba(220,38,38,.25),inset 0 0 12px rgba(220,38,38,.06)}
   html{font-size:16px;-webkit-tap-highlight-color:transparent}
   body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
@@ -162,6 +183,18 @@
   .completion h2{font-size:22px;font-weight:700;color:var(--heading);margin-bottom:8px}
   .completion p{font-size:14px;color:var(--muted);max-width:260px;line-height:1.5}
 
+  /* Theme toggle */
+  .theme-toggle{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--card);border:1.5px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;padding:0;flex-shrink:0;
+    transition:box-shadow .15s;
+    color:var(--body);
+  }
+  .theme-toggle:hover{box-shadow:0 0 0 2px var(--accent-dim)}
+  .theme-toggle svg{width:16px;height:16px;pointer-events:none}
+
   /* Animations */
   .fade-in{animation:fadeIn .3s ease}
   @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -178,10 +211,16 @@
         Tutup
       </button>
       <div class="header-title" id="surveyTitle">Sensus Penduduk 2025</div>
-      <button class="header-save" id="saveBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Simpan
-      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <button class="header-save" id="saveBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan
+        </button>
+      </div>
     </div>
     <div class="progress-wrap" id="progressWrap">
       <div class="progress-meta">
@@ -218,6 +257,28 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* Theme toggle */
+(function() {
+  var themeToggle = document.getElementById('themeToggle');
+  var iconMoon = themeToggle.querySelector('.icon-moon');
+  var iconSun = themeToggle.querySelector('.icon-sun');
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('survai_theme', theme);
+    iconMoon.style.display = theme === 'dark' ? '' : 'none';
+    iconSun.style.display = theme === 'light' ? '' : 'none';
+  }
+
+  var saved = localStorage.getItem('survai_theme');
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+
+  themeToggle.addEventListener('click', function() {
+    var current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+})();
+
 const survey = {
   title:"Sensus Penduduk 2025",
   questions:[

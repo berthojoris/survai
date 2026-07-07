@@ -22,6 +22,49 @@
     --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
+  [data-theme='light'] {
+    --bg:        #FAFAFA;
+    --card:      #FFFFFF;
+    --border:    #E4E4E7;
+    --accent:    #00C07B;
+    --accent-dim:#00C07B1A;
+    --heading:   #18181B;
+    --body:      #63636E;
+    --muted:     #A1A1AA;
+    --danger:    #DC2626;
+  }
+
+  [data-theme='light'] .input-wrap input {
+    background: #F4F4F5;
+    color: #18181B;
+  }
+
+  [data-theme='light'] .toast {
+    background: #FFFFFF;
+    color: #18181B;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  [data-theme='light'] .wordmark h1 {
+    color: #18181B;
+  }
+
+  [data-theme='light'] .field-error {
+    color: #DC2626;
+  }
+
+  [data-theme='light'] body {
+    background: #FAFAFA;
+  }
+
+  [data-theme='light'] .footer {
+    color: #A1A1AA;
+  }
+
+  [data-theme='light'] .links a {
+    color: #63636E;
+  }
+
   html { height: 100%; }
 
   body {
@@ -322,9 +365,72 @@
   }
 
   .field.has-error .field-error { display: block; }
+
+  /* ── Theme Toggle ── */
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--body);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    padding: 0;
+  }
+
+  .theme-toggle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .theme-toggle:active { transform: scale(0.95); }
+
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .theme-toggle .icon-sun,
+  .theme-toggle .icon-moon {
+    position: absolute;
+  }
+
+  .theme-toggle .icon-sun  { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+  .theme-toggle .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+
+  [data-theme='light'] .theme-toggle .icon-sun  { opacity: 1; transform: rotate(0deg) scale(1); }
+  [data-theme='light'] .theme-toggle .icon-moon { opacity: 0; transform: rotate(90deg) scale(0.5); }
 </style>
 </head>
 <body>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+</button>
 
 <div class="container">
   <!-- Wordmark -->
@@ -400,6 +506,15 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// Theme toggle (runs early to prevent flash)
+(function () {
+  var saved = localStorage.getItem('survai_theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#FAFAFA');
+  }
+})();
+
 (function () {
   'use strict';
 
@@ -413,6 +528,22 @@
   var emailField    = document.getElementById('emailField');
   var passwordField = document.getElementById('passwordField');
   var toastEl    = document.getElementById('toast');
+
+  // Theme toggle button
+  var themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', function () {
+    var html = document.documentElement;
+    var isLight = html.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('survai_theme', 'dark');
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0a0a0b');
+    } else {
+      html.setAttribute('data-theme', 'light');
+      localStorage.setItem('survai_theme', 'light');
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#FAFAFA');
+    }
+  });
 
   // Password visibility toggle
   var pwVisible = false;
