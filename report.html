@@ -98,6 +98,20 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
 .tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:4px solid transparent;border-top-color:#27272A}
 .bar-col:hover .tooltip{display:block}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);color:var(--heading);font-size:13px;font-weight:500;padding:14px 18px;border-radius:12px;opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;pointer-events:none;white-space:nowrap;z-index:100;display:flex;align-items:center;gap:10px;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.toast.visible{transform:translateX(-50%) translateY(0);opacity:1}
+.toast .toast-icon{flex-shrink:0;width:20px;height:20px}
+.toast .toast-icon svg{width:100%;height:100%}
+.toast.success{border:1.5px solid #00E599;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #00E59940,inset 0 0 12px #00E59910}
+.toast.success .toast-icon svg{stroke:#00E599;fill:none}
+.toast.info{border:1.5px solid #38BDF8;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #38BDF840,inset 0 0 12px #38BDF810}
+.toast.info .toast-icon svg{stroke:#38BDF8;fill:none}
+.toast.warning{border:1.5px solid #FBBF24;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #FBBF2440,inset 0 0 12px #FBBF2410}
+.toast.warning .toast-icon svg{stroke:#FBBF24;fill:none}
+.toast.danger{border:1.5px solid #EF4444;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #EF444440,inset 0 0 12px #EF444410}
+.toast.danger .toast-icon svg{stroke:#EF4444;fill:none}
 </style>
 </head>
 <body>
@@ -288,23 +302,26 @@ body{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:calc(var(--na
 </div>
 
 <nav class="bottom-nav">
-  <a href="#">
+  <a href="dashboard.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     Home
   </a>
-  <a href="#">
+  <a href="survey.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Surveys
   </a>
-  <a href="#" class="active">
+  <a href="report.html" class="active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     Report
   </a>
-  <a href="#">
+  <a href="profile.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Profile
   </a>
 </nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
 var dailyData=[
@@ -333,11 +350,25 @@ document.querySelectorAll('.answer-bar').forEach(function(bar){
   setTimeout(function(){bar.style.width=w+'%';},120);
 });
 function applyPreset(){}
+var toastEl=document.getElementById('toast');
+var toastTimer;
+var toastIcons={
+  success:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  info:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  warning:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  danger:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+};
+function showToast(msg,type){
+  type=type||'info';
+  clearTimeout(toastTimer);
+  toastEl.className='toast '+type;
+  toastEl.innerHTML='<span class="toast-icon">'+(toastIcons[type]||toastIcons.info)+'</span><span>'+msg+'</span>';
+  void toastEl.offsetWidth;
+  toastEl.classList.add('visible');
+  toastTimer=setTimeout(function(){toastEl.classList.remove('visible');},3000);
+}
 function exportReport(){
-  var btn=document.querySelector('.btn-export');
-  var orig=btn.innerHTML;
-  btn.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Saved';
-  setTimeout(function(){btn.innerHTML=orig;},2000);
+  showToast('Data berhasil diekspor','success');
 }
 </script>
 </body>

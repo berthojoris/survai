@@ -48,15 +48,29 @@
   }
   .header-save:active{opacity:.5}
   .header-save svg{width:15px;height:15px;flex-shrink:0}
-  .save-toast{
-    position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);
-    background:#1a1a1e;border:1px solid var(--border);
-    color:var(--heading);font-size:13px;font-weight:500;
-    padding:10px 20px;border-radius:100px;
-    opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);
-    pointer-events:none;z-index:100;white-space:nowrap;
+  /* Toast */
+  .toast{
+    position:fixed;bottom:24px;left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--card);color:var(--heading);
+    font-size:13px;font-weight:500;
+    padding:14px 18px;border-radius:12px;
+    opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;
+    pointer-events:none;white-space:nowrap;
+    z-index:100;display:flex;align-items:center;gap:10px;
+    max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.5);
   }
-  .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.visible{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast .toast-icon{flex-shrink:0;width:20px;height:20px}
+  .toast .toast-icon svg{width:100%;height:100%}
+  .toast.success{border:1.5px solid #00E599;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #00E59940,inset 0 0 12px #00E59910}
+  .toast.success .toast-icon svg{stroke:#00E599;fill:none}
+  .toast.info{border:1.5px solid #38BDF8;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #38BDF840,inset 0 0 12px #38BDF810}
+  .toast.info .toast-icon svg{stroke:#38BDF8;fill:none}
+  .toast.warning{border:1.5px solid #FBBF24;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #FBBF2440,inset 0 0 12px #FBBF2410}
+  .toast.warning .toast-icon svg{stroke:#FBBF24;fill:none}
+  .toast.danger{border:1.5px solid #EF4444;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 12px #EF444440,inset 0 0 12px #EF444410}
+  .toast.danger .toast-icon svg{stroke:#EF4444;fill:none}
 
   /* Progress */
   .progress-wrap{margin-bottom:6px}
@@ -159,6 +173,10 @@
   <!-- Header -->
   <div class="header">
     <div class="header-row">
+      <button class="header-save" id="backBtn" type="button" onclick="window.location.href='dashboard.html'" style="font-size:13px;font-weight:500;color:var(--body);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;opacity:.85;transition:opacity .2s">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0"><polyline points="15 18 9 12 15 6"/></svg>
+        Tutup
+      </button>
       <div class="header-title" id="surveyTitle">Sensus Penduduk 2025</div>
       <button class="header-save" id="saveBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -197,7 +215,7 @@
 </div>
 
 <!-- Toast -->
-<div class="save-toast" id="saveToast">&#10003; Progres tersimpan</div>
+<div class="toast" id="toast"></div>
 
 <script>
 const survey = {
@@ -452,7 +470,27 @@ function submitSurvey(){
     '<div class="completion-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'+
     '<h2>Survey Selesai</h2>'+
     '<p>Terima kasih! Data telah dikirim. Anda dapat melanjutkan ke responden berikutnya.</p>'+
+    '<a href="dashboard.html" style="display:inline-flex;align-items:center;gap:8px;margin-top:24px;background:var(--accent);color:#0a0a0b;font-size:15px;font-weight:700;border:none;border-radius:var(--radius);padding:17px 24px;text-decoration:none;cursor:pointer;min-height:54px;transition:opacity .15s,transform .1s">Kembali ke Dashboard</a>'+
     '</div>';
+  showToast('Survey berhasil dikirim!', 'success');
+}
+
+var toastIcons = {
+  success:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  info:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  warning:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  danger:'<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+};
+var toastTimer;
+var toastEl = document.getElementById('toast');
+function showToast(msg, type){
+  type = type || 'info';
+  clearTimeout(toastTimer);
+  toastEl.className = 'toast ' + type;
+  toastEl.innerHTML = '<span class="toast-icon">'+(toastIcons[type]||toastIcons.info)+'</span><span>'+msg+'</span>';
+  void toastEl.offsetWidth;
+  toastEl.classList.add('visible');
+  toastTimer = setTimeout(function(){ toastEl.classList.remove('visible'); }, 3000);
 }
 
 function saveProgress(){
@@ -463,10 +501,8 @@ function saveProgress(){
     var data = JSON.stringify({surveyId:survey.title, current:current, answers:answers, timestamp:Date.now()});
     localStorage.setItem('survai_progress', data);
   } catch(e){}
-  var toast = document.getElementById('saveToast');
-  toast.classList.add('show');
+  showToast('Progres tersimpan', 'success');
   setTimeout(function(){
-    toast.classList.remove('show');
     btn.style.pointerEvents = '';
     btn.style.opacity = '';
   }, 2000);

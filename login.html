@@ -461,7 +461,7 @@
       passwordField.classList.add('has-error');
       valid = false;
     }
-    if (!valid) return;
+    if (!valid) { showToast('Email dan password wajib diisi', 'danger'); return; }
 
     btnLogin.classList.add('loading');
     btnLogin.disabled = true;
@@ -469,7 +469,8 @@
     setTimeout(function () {
       btnLogin.classList.remove('loading');
       btnLogin.disabled = false;
-      showToast('Authentication not configured — connect your backend', 'info');
+      showToast('Login berhasil!', 'success');
+      setTimeout(function () { window.location.href = 'dashboard.html'; }, 800);
     }, 1800);
   });
 
