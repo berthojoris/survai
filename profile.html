@@ -143,6 +143,7 @@ body{
   background:#FFFFFF;
 }
 .nav-item{
+  position:relative;
   display:flex;flex-direction:column;align-items:center;gap:4px;
   text-decoration:none;padding:8px 16px;border-radius:12px;
   transition:all .2s;min-width:64px;
@@ -151,6 +152,7 @@ body{
 .nav-item span{font-size:10px;font-weight:600;color:var(--muted);transition:color .2s}
 .nav-item.active svg{color:var(--accent)}
 .nav-item.active span{color:var(--accent)}
+.nav-item.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
 .nav-item:not(.active):hover svg{color:var(--body)}
 .nav-item:not(.active):hover span{color:var(--body)}
 
