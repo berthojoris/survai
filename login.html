@@ -242,21 +242,70 @@
     left: 50%;
     transform: translateX(-50%) translateY(80px);
     background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--body);
+    color: var(--heading);
     font-size: 13px;
-    padding: 12px 20px;
-    border-radius: var(--radius);
+    font-weight: 500;
+    padding: 14px 18px;
+    border-radius: 12px;
     opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
     pointer-events: none;
     white-space: nowrap;
     z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
 
   .toast.visible {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+  }
+
+  .toast .toast-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  .toast .toast-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Toast type: success */
+  .toast.success {
+    border: 1.5px solid #00E599;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 12px #00E59940, inset 0 0 12px #00E59910;
+  }
+  .toast.success .toast-icon svg { stroke: #00E599; fill: none; }
+
+  /* Toast type: info */
+  .toast.info {
+    border: 1.5px solid #38BDF8;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 12px #38BDF840, inset 0 0 12px #38BDF810;
+  }
+  .toast.info .toast-icon svg { stroke: #38BDF8; fill: none; }
+
+  /* Toast type: warning */
+  .toast.warning {
+    border: 1.5px solid #FBBF24;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 12px #FBBF2440, inset 0 0 12px #FBBF2410;
+  }
+  .toast.warning .toast-icon svg { stroke: #FBBF24; fill: none; }
+
+  /* Toast type: danger */
+  .toast.danger {
+    border: 1.5px solid #EF4444;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 12px #EF444440, inset 0 0 12px #EF444410;
+  }
+  .toast.danger .toast-icon svg { stroke: #EF4444; fill: none; }
+
+  @keyframes toastPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
   }
 
   /* ── Field error ── */
@@ -378,11 +427,23 @@
   email.addEventListener('input', function () { emailField.classList.remove('has-error'); });
   password.addEventListener('input', function () { passwordField.classList.remove('has-error'); });
 
+  // Toast icons
+  var toastIcons = {
+    success: '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    info: '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    danger: '<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+  };
+
   // Toast helper
   var toastTimer;
-  function showToast(msg) {
+  function showToast(msg, type) {
+    type = type || 'info';
     clearTimeout(toastTimer);
-    toastEl.textContent = msg;
+    toastEl.className = 'toast ' + type;
+    toastEl.innerHTML = '<span class="toast-icon">' + (toastIcons[type] || toastIcons.info) + '</span><span>' + msg + '</span>';
+    // Force reflow for re-trigger animation
+    void toastEl.offsetWidth;
     toastEl.classList.add('visible');
     toastTimer = setTimeout(function () { toastEl.classList.remove('visible'); }, 3000);
   }
@@ -408,18 +469,18 @@
     setTimeout(function () {
       btnLogin.classList.remove('loading');
       btnLogin.disabled = false;
-      showToast('Authentication not configured — connect your backend');
+      showToast('Authentication not configured — connect your backend', 'info');
     }, 1800);
   });
 
   // Stub links
   document.getElementById('forgotLink').addEventListener('click', function (e) {
     e.preventDefault();
-    showToast('Password reset flow — coming soon');
+    showToast('Password reset flow — coming soon', 'warning');
   });
   document.getElementById('createLink').addEventListener('click', function (e) {
     e.preventDefault();
-    showToast('Account creation — coming soon');
+    showToast('Account creation — coming soon', 'info');
   });
 })();
 </script>
