@@ -63,7 +63,7 @@ body{
 
 /* top bar */
 .topbar{
-  padding:16px 20px 12px;
+  padding:14px 20px 12px;
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -71,8 +71,9 @@ body{
   top:0;
   z-index:10;
   background:var(--bg);
+  border-bottom:1px solid var(--border);
 }
-.topbar-left h1{font-size:20px;font-weight:700;color:var(--heading);letter-spacing:-.3px}
+.topbar-left h1{font-size:18px;font-weight:600;color:var(--heading);letter-spacing:-.2px}
 .topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
 .avatar{
   width:36px;height:36px;border-radius:50%;
@@ -310,15 +311,12 @@ body{
 
 /* ── Theme toggle ── */
 .theme-toggle{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--card);border:1.5px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;padding:0;flex-shrink:0;
-  transition:box-shadow .15s;
-  color:var(--body);
+  background:none;border:none;cursor:pointer;padding:4px;
+  color:var(--muted);display:flex;align-items:center;flex-shrink:0;
+  transition:color .15s;
 }
-.theme-toggle:hover{box-shadow:0 0 0 2px var(--accent-dim)}
-.theme-toggle svg{width:18px;height:18px;pointer-events:none}
+.theme-toggle:hover{color:var(--heading)}
+.theme-toggle svg{width:20px;height:20px;pointer-events:none}
 .topbar-right{display:flex;align-items:center;gap:10px}
 </style>
 </head>
