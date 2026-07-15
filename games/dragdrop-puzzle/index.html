@@ -38,12 +38,14 @@
     min-height: 100dvh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    align-items: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
     perspective: 1200px;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Ambient background particles */
@@ -67,7 +69,7 @@
   .game-container {
     position: relative; z-index: 1;
     width: 100%; max-width: 900px;
-    padding: 20px;
+    padding: 20px 20px 40px;
     display: flex; flex-direction: column;
     gap: 16px;
   }
@@ -403,6 +405,11 @@
 
   /* RESPONSIVE */
   @media (max-width: 700px) {
+    body {
+      align-items: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     .game-area {
       flex-direction: column;
       gap: 16px;
@@ -422,6 +429,7 @@
     .choice-card:hover { transform: translateY(-1px) scale(1.01); }
     .drop-zone { min-height: 120px; }
     .game-header h1 { font-size: 1.5rem; }
+    .game-container { padding-bottom: 60px; }
   }
 </style>
 </head>
