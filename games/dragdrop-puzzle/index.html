@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Sort It Out — 3D Drag &amp; Drop Puzzle</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #0a0a1a;
+    --surface: #14142b;
+    --surface2: #1e1e3a;
+    --accent: #6c5ce7;
+    --accent-glow: #a29bfe;
+    --success: #00cec9;
+    --success-glow: #55efc4;
+    --danger: #ff6b6b;
+    --danger-glow: #ff8787;
+    --text: #e0e0f0;
+    --text-dim: #8888aa;
+    --card-1: #6c5ce7;
+    --card-2: #e17055;
+    --card-3: #00b894;
+    --card-4: #fdcb6e;
+    --card-5: #0984e3;
+    --card-6: #fd79a8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    perspective: 1200px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ambient background particles */
+  .bg-particles {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  }
+  .bg-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.06;
+    animation: float 12s infinite ease-in-out;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-60px) scale(1.3); }
+  }
+
+  /* Main container */
+  .game-container {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 900px;
+    padding: 20px;
+    display: flex; flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Header */
+  .game-header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .game-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-glow), #74b9ff, var(--success-glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 18px rgba(108,92,231,0.3));
+  }
+  .game-header .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Score & progress */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .status-bar .counter {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--accent-glow);
+  }
+  .status-bar .counter.placed { color: var(--success); }
+  .status-bar .counter.wrong-track { color: var(--danger); }
+
+  /* Game area */
+  .game-area {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* LEFT PANEL */
+  .panel-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .panel-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  /* Choice cards */
+  .choice-card {
+    position: relative;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 2px solid rgba(108,92,231,0.3);
+    border-radius: 16px;
+    cursor: grab;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    transform: rotateX(2deg) rotateY(-2deg);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.03);
+    z-index: 1;
+  }
+  .choice-card:hover {
+    transform: rotateX(0deg) rotateY(0deg) translateY(-2px) scale(1.02);
+    border-color: var(--accent);
+    box-shadow: 0 12px 40px rgba(108,92,231,0.2),
+                0 4px 24px rgba(0,0,0,0.4);
+  }
+  .choice-card:active {
+    cursor: grabbing;
+    transform: rotateX(0deg) rotateY(0deg) scale(0.97);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .choice-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .choice-card.placed {
+    opacity: 0.4;
+    pointer-events: none;
+    border-style: dashed;
+    border-color: rgba(108,92,231,0.15);
+    transform: none;
+  }
+  .choice-card .card-number {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .choice-card .card-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-left: 8px;
+  }
+  .choice-card .card-accent {
+    position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Card color variants */
+  .card-1 .card-number, .card-1 .card-accent { background: var(--card-1); }
+  .card-2 .card-number, .card-2 .card-accent { background: var(--card-2); }
+  .card-3 .card-number, .card-3 .card-accent { background: var(--card-3); }
+  .card-4 .card-number, .card-4 .card-accent { background: var(--card-4); }
+  .card-5 .card-number, .card-5 .card-accent { background: var(--card-5); }
+  .card-6 .card-number, .card-6 .card-accent { background: var(--card-6); }
+
+  /* RIGHT PANEL */
+  .panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  /* Drop zones */
+  .drop-zone {
+    min-height: 160px;
+    background: var(--surface);
+    border: 2px dashed rgba(108,92,231,0.25);
+    border-radius: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 10px;
+    padding: 16px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(1deg);
+    box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(108,92,231,0.08);
+    box-shadow: 0 0 40px rgba(108,92,231,0.15),
+                inset 0 0 40px rgba(108,92,231,0.05);
+    transform: rotateX(0deg) scale(1.02);
+  }
+  .drop-zone-label {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+  .drop-zone.has-items .drop-zone-label {
+    opacity: 0;
+  }
+
+  /* Placed item in drop zone */
+  .placed-item {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .placed-item:hover { transform: scale(1.05); }
+  .placed-item:active { transform: scale(0.95); }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .btn {
+    padding: 12px 32px;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-reset {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid rgba(136,136,170,0.3);
+  }
+  .btn-reset:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(108,92,231,0.2);
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(108,92,231,0.3);
+  }
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(108,92,231,0.4);
+  }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* OVERLAY & ANIMATIONS */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .result-card {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 40px 48px;
+    text-align: center;
+    transform: rotateX(-10deg);
+    animation: flipUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    max-width: 400px;
+    width: 90%;
+  }
+  @keyframes flipUp {
+    from { transform: rotateX(-60deg) translateY(40px); opacity: 0; }
+    to { transform: rotateX(0deg) translateY(0); opacity: 1; }
+  }
+  .result-icon {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    animation: bounceIn 0.6s 0.2s both;
+  }
+  @keyframes bounceIn {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .result-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .result-title.success { color: var(--success); }
+  .result-title.failure { color: var(--danger); }
+  .result-msg {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+
+  /* Confetti */
+  .confetti-container {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    animation: confettiFall 1.5s ease-out forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Shake animation */
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-12px) rotate(-0.5deg); }
+    30% { transform: translateX(10px) rotate(0.5deg); }
+    45% { transform: translateX(-8px); }
+    60% { transform: translateX(6px); }
+    75% { transform: translateX(-3px); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .game-area {
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel-left {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .choice-card {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 140px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      transform: none;
+    }
+    .choice-card:hover { transform: translateY(-1px) scale(1.01); }
+    .drop-zone { min-height: 120px; }
+    .game-header h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-particles" id="particles"></div>
+
+<div class="game-container" id="game">
+  <div class="game-header">
+    <h1>🧩 Sort It Out</h1>
+    <p class="subtitle">Drag 3 jawaban yang tepat ke kotak di kanan</p>
+  </div>
+
+  <div class="status-bar">
+    <span>Ditempatkan:</span>
+    <span class="counter" id="placedCount">0</span>
+    <span>/ 3</span>
+  </div>
+
+  <div class="game-area">
+    <!-- LEFT: Choices -->
+    <div class="panel-left" id="choicesPanel">
+      <div class="panel-label">📋 Pilihan</div>
+    </div>
+
+    <!-- RIGHT: Drop Zones -->
+    <div class="panel-right" id="dropPanel">
+      <div class="panel-label">🎯 Target</div>
+      <div class="drop-zone" id="zone1" data-zone="1">
+        <span class="drop-zone-label">Drop jawaban di sini</span>
+      </div>
+      <div class="drop-zone" id="zone2" data-zone="2">
+        <span class="drop-zone-label">Drop jawaban di sini</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-reset" onclick="resetGame()">🔄 Reset</button>
+    <button class="btn btn-submit" id="submitBtn" disabled onclick="checkAnswer()">
+      ✅ Periksa Jawaban
+    </button>
+  </div>
+</div>
+
+<!-- Overlay container (hidden by default) -->
+<div id="overlayContainer"></div>
+<div id="confettiContainer" class="confetti-container"></div>
+
+<script>
+// ==================== GAME CONFIG ====================
+// Admin-defined correct answer: which 3 items (by index) are correct
+const CORRECT_ANSWERS = [0, 2, 4]; // indices of correct choices
+
+const CHOICES = [
+  { text: "Fotosintesis terjadi di mitokondria", color: "card-1" },
+  { text: "Air mendidih pada 100°C di tekanan 1 atm", color: "card-2" },
+  { text: "HTML adalah bahasa pemrograman", color: "card-3" },
+  { text: "Bumi mengelilingi Matahari", color: "card-4" },
+  { text: "Mars memiliki 5 bulan alami", color: "card-5" },
+  { text: "Atom terdiri dari proton, neutron, elektron", color: "card-6" },
+];
+
+// ==================== STATE ====================
+let placedItems = {};  // { zoneId: [choiceIndex, ...] }
+
+// ==================== BG PARTICLES ====================
+(function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-particle';
+    p.style.cssText = `
+      width: ${4 + Math.random() * 12}px;
+      height: ${4 + Math.random() * 12}px;
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 100}%;
+      animation-delay: ${Math.random() * 12}s;
+      animation-duration: ${8 + Math.random() * 16}s;
+    `;
+    container.appendChild(p);
+  }
+})();
+
+// ==================== RENDER CHOICES ====================
+function renderChoices() {
+  const panel = document.getElementById('choicesPanel');
+  // Clear (keep panel-label)
+  panel.querySelectorAll('.choice-card').forEach(c => c.remove());
+
+  CHOICES.forEach((choice, idx) => {
+    const placed = isPlaced(idx);
+    const card = document.createElement('div');
+    card.className = `choice-card ${choice.color}${placed ? ' placed' : ''}`;
+    card.draggable = !placed;
+    card.dataset.index = idx;
+    card.innerHTML = `
+      <div class="card-number">${idx + 1}</div>
+      <div class="card-accent"></div>
+      <div class="card-text">${choice.text}</div>
+    `;
+
+    if (!placed) {
+      card.addEventListener('dragstart', handleDragStart);
+      card.addEventListener('dragend', handleDragEnd);
+      card.addEventListener('touchstart', handleTouchStart, { passive: false });
+      card.addEventListener('touchmove', handleTouchMove, { passive: false });
+      card.addEventListener('touchend', handleTouchEnd);
+    }
+
+    panel.appendChild(card);
+  });
+}
+
+function isPlaced(idx) {
+  return Object.values(placedItems).some(arr => arr.includes(idx));
+}
+
+function getPlacedCount() {
+  return Object.values(placedItems).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+// ==================== DRAG & DROP (Desktop) ====================
+let draggedIndex = null;
+
+function handleDragStart(e) {
+  draggedIndex = parseInt(this.dataset.index);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedIndex.toString());
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  draggedIndex = null;
+  document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
+}
+
+// ==================== DROP ZONES ====================
+document.getElementById('zone1').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+});
+document.getElementById('zone1').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('drag-over');
+});
+document.getElementById('zone1').addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const idx = parseInt(e.dataTransfer.getData('text/plain'));
+  if (!isNaN(idx)) dropItem(this, idx);
+});
+
+document.getElementById('zone2').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+});
+document.getElementById('zone2').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('drag-over');
+});
+document.getElementById('zone2').addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const idx = parseInt(e.dataTransfer.getData('text/plain'));
+  if (!isNaN(idx)) dropItem(this, idx);
+});
+
+// ==================== TOUCH SUPPORT (Mobile) ====================
+let touchDragIndex = null;
+let touchClone = null;
+let touchStartX, touchStartY;
+let touchOffsetX, touchOffsetY;
+
+function handleTouchStart(e) {
+  if (this.classList.contains('placed')) return;
+  e.preventDefault();
+  touchDragIndex = parseInt(this.dataset.index);
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  const rect = this.getBoundingClientRect();
+  touchOffsetX = touch.clientX - rect.left;
+  touchOffsetY = touch.clientY - rect.top;
+
+  this.classList.add('dragging');
+}
+
+function handleTouchMove(e) {
+  if (touchDragIndex === null) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+
+  if (!touchClone) {
+    touchClone = document.createElement('div');
+    touchClone.className = `placed-item ${CHOICES[touchDragIndex].color}`;
+    touchClone.style.cssText = `
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.9;
+      width: auto;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    `;
+    touchClone.textContent = CHOICES[touchDragIndex].text;
+    document.body.appendChild(touchClone);
+  }
+
+  touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+  touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+  // Highlight drop zone under finger
+  const zones = document.querySelectorAll('.drop-zone');
+  zones.forEach(z => {
+    const r = z.getBoundingClientRect();
+    if (touch.clientX >= r.left && touch.clientX <= r.right &&
+        touch.clientY >= r.top && touch.clientY <= r.bottom) {
+      z.classList.add('drag-over');
+    } else {
+      z.classList.remove('drag-over');
+    }
+  });
+}
+
+function handleTouchEnd(e) {
+  if (touchDragIndex === null) return;
+
+  const touch = e.changedTouches[0];
+  const zones = document.querySelectorAll('.drop-zone');
+  let dropped = false;
+
+  zones.forEach(z => {
+    const r = z.getBoundingClientRect();
+    if (touch.clientX >= r.left && touch.clientX <= r.right &&
+        touch.clientY >= r.top && touch.clientY <= r.bottom) {
+      dropItem(z, touchDragIndex);
+      dropped = true;
+    }
+    z.classList.remove('drag-over');
+  });
+
+  // Cleanup
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  const sourceCard = document.querySelector(`.choice-card[data-index="${touchDragIndex}"]`);
+  if (sourceCard) sourceCard.classList.remove('dragging');
+  touchDragIndex = null;
+}
+
+// ==================== DROP LOGIC ====================
+function dropItem(zone, choiceIndex) {
+  if (isPlaced(choiceIndex)) return;
+  if (getPlacedCount() >= 3) return;
+
+  const zoneId = zone.dataset.zone;
+  if (!placedItems[zoneId]) placedItems[zoneId] = [];
+  placedItems[zoneId].push(choiceIndex);
+
+  renderDropZones();
+  renderChoices();
+  updateUI();
+
+  // Play subtle sound-like feedback
+  if (getPlacedCount() === 3) {
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.animation = 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    setTimeout(() => {
+      document.getElementById('submitBtn').style.animation = '';
+    }, 400);
+  }
+}
+
+function removeFromZone(zoneId, choiceIndex) {
+  if (placedItems[zoneId]) {
+    placedItems[zoneId] = placedItems[zoneId].filter(i => i !== choiceIndex);
+    if (placedItems[zoneId].length === 0) delete placedItems[zoneId];
+  }
+  renderDropZones();
+  renderChoices();
+  updateUI();
+  document.getElementById('submitBtn').disabled = getPlacedCount() !== 3;
+}
+
+function renderDropZones() {
+  ['zone1', 'zone2'].forEach(zoneId => {
+    const zone = document.getElementById(zoneId);
+    // Clear old placed items
+    zone.querySelectorAll('.placed-item').forEach(el => el.remove());
+    const label = zone.querySelector('.drop-zone-label');
+
+    const items = placedItems[zoneId] || [];
+    if (items.length > 0) {
+      zone.classList.add('has-items');
+      items.forEach(idx => {
+        const chip = document.createElement('div');
+        chip.className = `placed-item ${CHOICES[idx].color}`;
+        chip.textContent = CHOICES[idx].text;
+        chip.addEventListener('click', () => removeFromZone(zoneId, idx));
+        chip.title = 'Klik untuk mengembalikan';
+        zone.appendChild(chip);
+      });
+    } else {
+      zone.classList.remove('has-items');
+    }
+  });
+}
+
+// ==================== CHECK ANSWER ====================
+function checkAnswer() {
+  const allPlaced = Object.values(placedItems).flat();
+  if (allPlaced.length !== 3) return;
+
+  // Check if the placed items match the correct answers (order-insensitive)
+  const sortedPlaced = [...allPlaced].sort((a, b) => a - b);
+  const sortedCorrect = [...CORRECT_ANSWERS].sort((a, b) => a - b);
+
+  const isCorrect = sortedPlaced.length === sortedCorrect.length &&
+    sortedPlaced.every((v, i) => v === sortedCorrect[i]);
+
+  if (isCorrect) {
+    showSuccess();
+  } else {
+    showFailure();
+  }
+}
+
+function showSuccess() {
+  spawnConfetti();
+  const overlay = document.getElementById('overlayContainer');
+  overlay.innerHTML = `
+    <div class="overlay" onclick="closeOverlay()">
+      <div class="result-card">
+        <div class="result-icon">🎉</div>
+        <div class="result-title success">Jawaban Benar!</div>
+        <div class="result-msg">Kamu berhasil! Semua jawaban yang dipilih tepat.</div>
+        <button class="btn btn-submit" onclick="closeOverlay(); resetGame();">🔄 Main Lagi</button>
+      </div>
+    </div>
+  `;
+}
+
+function showFailure() {
+  const gameEl = document.getElementById('game');
+  gameEl.classList.add('shake');
+  setTimeout(() => gameEl.classList.remove('shake'), 500);
+
+  const overlay = document.getElementById('overlayContainer');
+  overlay.innerHTML = `
+    <div class="overlay" onclick="closeOverlay()">
+      <div class="result-card">
+        <div class="result-icon">😢</div>
+        <div class="result-title failure">Belum Tepat</div>
+        <div class="result-msg">Beberapa jawaban masih salah. Coba lagi, bro!</div>
+        <button class="btn btn-reset" onclick="closeOverlay()">🔙 Coba Lagi</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeOverlay() {
+  document.getElementById('overlayContainer').innerHTML = '';
+}
+
+// ==================== CONFETTI ====================
+function spawnConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#6c5ce7','#a29bfe','#00cec9','#55efc4','#fdcb6e','#fd79a8','#74b9ff','#e17055'];
+
+  for (let i = 0; i < 100; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}%;
+      top: -20px;
+      width: ${6 + Math.random() * 16}px;
+      height: ${6 + Math.random() * 12}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      animation-delay: ${Math.random() * 0.8}s;
+      animation-duration: ${1.2 + Math.random() * 2}s;
+    `;
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 2500);
+  }
+}
+
+// ==================== RESET ====================
+function resetGame() {
+  placedItems = {};
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').style.animation = '';
+  closeOverlay();
+  renderDropZones();
+  renderChoices();
+  updateUI();
+}
+
+// ==================== UI UPDATE ====================
+function updateUI() {
+  const count = getPlacedCount();
+  const counter = document.getElementById('placedCount');
+  counter.textContent = count;
+
+  // Update counter styling
+  counter.classList.remove('placed', 'wrong-track');
+  if (count === 3) {
+    counter.classList.add('placed');
+  }
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOverlay();
+  if (e.key === 'r' && e.ctrlKey) { e.preventDefault(); resetGame(); }
+});
+
+// ==================== INIT ====================
+renderChoices();
+renderDropZones();
+updateUI();
+</script>
+
+</body>
+</html>
