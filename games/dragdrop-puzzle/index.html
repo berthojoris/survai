@@ -711,20 +711,20 @@ function removeFromZone(zoneId, choiceIndex) {
 }
 
 function renderDropZones() {
-  ['zone1', 'zone2'].forEach(zoneId => {
-    const zone = document.getElementById(zoneId);
+  ['zone1', 'zone2'].forEach(elementId => {
+    const zone = document.getElementById(elementId);
+    const key = zone.dataset.zone; // '1' or '2' — matches placedItems keys
     // Clear old placed items
     zone.querySelectorAll('.placed-item').forEach(el => el.remove());
-    const label = zone.querySelector('.drop-zone-label');
 
-    const items = placedItems[zoneId] || [];
+    const items = placedItems[key] || [];
     if (items.length > 0) {
       zone.classList.add('has-items');
       items.forEach(idx => {
         const chip = document.createElement('div');
         chip.className = `placed-item ${CHOICES[idx].color}`;
         chip.textContent = CHOICES[idx].text;
-        chip.addEventListener('click', () => removeFromZone(zoneId, idx));
+        chip.addEventListener('click', () => removeFromZone(key, idx));
         chip.title = 'Klik untuk mengembalikan';
         zone.appendChild(chip);
       });
