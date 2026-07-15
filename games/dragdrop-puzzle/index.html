@@ -459,10 +459,10 @@
     <div class="panel-right" id="dropPanel">
       <div class="panel-label">🎯 Target</div>
       <div class="drop-zone" id="zone1" data-zone="1">
-        <span class="drop-zone-label">Drop jawaban di sini</span>
+        <span class="drop-zone-label">Kolom A — drop 3 jawaban di sini</span>
       </div>
       <div class="drop-zone" id="zone2" data-zone="2">
-        <span class="drop-zone-label">Drop jawaban di sini</span>
+        <span class="drop-zone-label">Kolom B — drop 3 jawaban di sini</span>
       </div>
     </div>
   </div>
@@ -724,10 +724,14 @@ function renderDropZones() {
     const key = zone.dataset.zone; // '1' or '2' — matches placedItems keys
     // Clear old placed items
     zone.querySelectorAll('.placed-item').forEach(el => el.remove());
-
+    // Update label
+    const label = zone.querySelector('.drop-zone-label');
     const items = placedItems[key] || [];
     if (items.length > 0) {
       zone.classList.add('has-items');
+      if (label) {
+        label.innerHTML = `Kolom ${key === '1' ? 'A' : 'B'} — <strong>${items.length}/3</strong> terisi`;
+      }
       items.forEach(idx => {
         const chip = document.createElement('div');
         chip.className = `placed-item ${CHOICES[idx].color}`;
@@ -738,6 +742,9 @@ function renderDropZones() {
       });
     } else {
       zone.classList.remove('has-items');
+      if (label) {
+        label.innerHTML = `Kolom ${key === '1' ? 'A' : 'B'} — drop 3 jawaban di sini`;
+      }
     }
   });
 }
@@ -746,6 +753,13 @@ function renderDropZones() {
 function checkAnswer() {
   const allPlaced = Object.values(placedItems).flat();
   if (allPlaced.length !== 3) return;
+
+  // Enforce: all 3 items must be in ONE zone (cannot be split)
+  const zoneKeys = Object.keys(placedItems).filter(k => placedItems[k].length > 0);
+  if (zoneKeys.length > 1) {
+    showSplitWarning();
+    return;
+  }
 
   // Check if the placed items match the correct answers (order-insensitive)
   const sortedPlaced = [...allPlaced].sort((a, b) => a - b);
@@ -759,6 +773,24 @@ function checkAnswer() {
   } else {
     showFailure();
   }
+}
+
+function showSplitWarning() {
+  const gameEl = document.getElementById('game');
+  gameEl.classList.add('shake');
+  setTimeout(() => gameEl.classList.remove('shake'), 500);
+
+  const overlay = document.getElementById('overlayContainer');
+  overlay.innerHTML = `
+    <div class="overlay" onclick="closeOverlay()">
+      <div class="result-card">
+        <div class="result-icon">⚠️</div>
+        <div class="result-title failure">Satu Kolom Aja!</div>
+        <div class="result-msg">Ke-3 jawaban harus di <strong>satu kolom yang sama</strong>, ga boleh nyebar. Pindahin semua ke salah satu kolom aja.</div>
+        <button class="btn btn-reset" onclick="closeOverlay()">🔙 OK, Siap</button>
+      </div>
+    </div>
+  `;
 }
 
 function showSuccess() {
